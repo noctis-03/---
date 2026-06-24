@@ -306,6 +306,32 @@
   </div>
 </section>
 
+<hr class="divider">
+
+<!-- CHART 5: 가중치 순위 막대그래프 -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">키워드 가중치 순위 (내림차순)</h2>
+  </div>
+  <div class="chart-card">
+    <div class="chart-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#534AB7;"></span>상위 그룹 (가중치 5 이상)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#5DCAA5;"></span>하위 그룹 (가중치 5 미만)</span>
+    </div>
+    <div class="chart-wrap" style="height:720px;">
+      <canvas id="chart5" role="img" aria-label="28개 키워드의 가중치 내림차순 막대그래프"></canvas>
+    </div>
+    <div class="source-note">
+      <p>
+        <strong>해석</strong><br>
+        가중치 기준 상위 5개 키워드는 <strong>유튜브(18.06) · OTT(12.82) · 이용자(10.75) · 이용자실태조사(10.05) · 코로나19(8.28)</strong> 순으로,
+        영상 콘텐츠 플랫폼 관련 키워드가 상위권을 점유함. 가중치 5 이상의 상위 그룹은 8개 키워드로 집계됨.
+      </p>
+    </div>
+  </div>
+</section>
+
 <script>
 /* ── Chart 1: 게임 중단 이유 ── */
 new Chart(document.getElementById('chart1'), {
@@ -476,7 +502,7 @@ new Chart(document.getElementById('chart3'), {
   }
 });
 
-/* ── Chart 4: 키워드 버블 차트 ── */
+/* ── 키워드 데이터 (Chart 4, 5 공용) ── */
 const keywords = [
   {k:'유튜브', w:18.06, f:140},
   {k:'OTT', w:12.82, f:132},
@@ -508,6 +534,7 @@ const keywords = [
   {k:'웹툰', w:1.8, f:30}
 ];
 
+/* ── Chart 4: 키워드 버블 차트 ── */
 const high = keywords.filter(d => d.w >= 5);
 const low  = keywords.filter(d => d.w < 5);
 
@@ -587,10 +614,77 @@ new Chart(document.getElementById('bubbleChart'), {
           arr.forEach((d, i) => {
             const el = meta.data[i];
             if (!el) return;
-            ctx.fillStyle = di === 0 ? '#ffffff' : '#085041';
+            ctx.fillStyle = di === 0 ? '#26215C' : '#085041';
             const label = d.k.length > 5 ? d.k.slice(0,5)+'…' : d.k;
             ctx.fillText(label, el.x, el.y);
           });
+        });
+        ctx.restore();
+      }
+    }
+  }
+});
+
+/* ── Chart 5: 가중치 내림차순 막대그래프 ── */
+// 가중치 내림차순 정렬 (원본 보존 위해 복사 후 정렬)
+const sortedByWeight = [...keywords].sort((a, b) => b.w - a.w);
+
+const labels5 = sortedByWeight.map(d => d.k);
+const values5 = sortedByWeight.map(d => d.w);
+const freqs5  = sortedByWeight.map(d => d.f);
+const bgColors5     = sortedByWeight.map(d => d.w >= 5 ? '#534AB7' : '#5DCAA5');
+const borderColors5 = sortedByWeight.map(d => d.w >= 5 ? '#3C3489' : '#0F6E56');
+
+new Chart(document.getElementById('chart5'), {
+  type: 'bar',
+  data: {
+    labels: labels5,
+    datasets: [{
+      data: values5,
+      backgroundColor: bgColors5,
+      borderColor: borderColors5,
+      borderWidth: 1,
+      borderRadius: 3,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: { right: 50 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `  가중치: ${ctx.parsed.x}  /  빈도수: ${freqs5[ctx.dataIndex]}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        min: 0, max: 20,
+        title: { display: true, text: '가중치', color:'#888780', font:{size:12} },
+        ticks: { color:'#888780', font:{size:11} },
+        grid: { color:'rgba(136,135,128,0.15)' },
+        border: { display: false }
+      },
+      y: {
+        ticks: { color:'#5F5E5A', font:{size:11}, crossAlign:'far' },
+        grid: { display: false },
+        border: { display: false }
+      }
+    },
+    animation: {
+      onComplete() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.font = '500 11px Noto Sans KR, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        this.getDatasetMeta(0).data.forEach((bar, i) => {
+          ctx.fillStyle = '#5F5E5A';
+          ctx.fillText(`${values5[i]}  (${i + 1}위)`, bar.x + 6, bar.y);
         });
         ctx.restore();
       }
